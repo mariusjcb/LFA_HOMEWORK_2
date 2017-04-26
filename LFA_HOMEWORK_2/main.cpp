@@ -6,10 +6,14 @@
 //  Copyright © 2017 Marius Ilie. All rights reserved.
 //
 
-//MARK: C libraries
+//MARK: - Libraries
 #include <stdlib.h>
+#ifdef __APPLE__
+    #include <unistd.h>
+#else
+    #include <io.h>
+#endif
 
-//MARK: C++ libraries
 #include <iostream>
 #include <vector>
 #include <map>
@@ -18,6 +22,7 @@
 
 using namespace std;
 
+//MARK: - DEFINES
 const int FileLineSize = 125; // OR: numeric_limits<streamsize>::max()
 
 struct Edge {
@@ -25,6 +30,32 @@ struct Edge {
     char key;
     int end;
 };
+
+//MARK: - FILES USAGE
+fstream* open_file(const char* file_name) {
+    static fstream f(file_name);
+    
+    if(f.is_open())
+        return &f;
+    
+    cout << "File not found.\n";
+    if (isatty(fileno(stdin)))
+    {
+        cout << "Change file name or...\n\nInsert file using '<your_file' in tty mode" << endl;
+        exit(0);
+    }
+    
+    return NULL;
+}
+
+ifstream* open_input_file(const char* file_name) {
+    return (ifstream*)open_file(file_name);
+}
+
+
+ofstream* open_output_file(const char* file_name) {
+    return (ofstream*)open_file(file_name);
+}
 
 ifstream& GotoLine(ifstream& file, unsigned int num){
     file.seekg(ios::beg);
@@ -34,6 +65,7 @@ ifstream& GotoLine(ifstream& file, unsigned int num){
     return file;
 }
 
+//MARK: - READERS
 char* readBufferFromConsoleInput() {
     static char buff[FileLineSize];
     
@@ -134,12 +166,12 @@ vector<Edge> readTransitionStates(ifstream *file = NULL) {
 }
 
 int main(int argc, const char * argv[]) {
-    ifstream f("inputs.txt");
+    ifstream *f = open_input_file("inputs.txt");
     vector<Edge> edges;
     
-    int start_state = readStartState(f.is_open() ? &f : NULL);
-    vector<int> final_states = readFinalStates(f.is_open() ? &f : NULL);
-    vector<Edge> transition_states = readTransitionStates(f.is_open() ? &f : NULL);
+    int start_state = readStartState(f);
+    vector<int> final_states = readFinalStates(f);
+    vector<Edge> transition_states = readTransitionStates(f);
     
     cout << start_state << "\n";
     for(int i = 0; i < final_states.size(); i++) {
