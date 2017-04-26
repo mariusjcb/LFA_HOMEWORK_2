@@ -109,21 +109,24 @@ vector<Edge> readTransitionStates(ifstream *file = NULL) {
             string line;
             getline(*file, line);
             
-            char *cstr = new char[line.length() + 1];
-            strcpy(cstr, line.c_str());
-            
-            Edge currentEdge = *new Edge;
-            
-            p = strtok(cstr, " ");
-            currentEdge.start = atoi(p);
-            
-            p = strtok(NULL, " ");
-            currentEdge.key = *p;
-            
-            p = strtok(NULL, " ");
-            currentEdge.end = atoi(p);
-            
-            transitionStates.push_back(currentEdge);
+            if(line.length())
+            {
+                char *cstr = new char[line.length() + 1];
+                strcpy(cstr, line.c_str());
+                
+                Edge currentEdge = *new Edge;
+                
+                p = strtok(cstr, " ");
+                currentEdge.start = atoi(p);
+                
+                p = strtok(NULL, " ");
+                currentEdge.key = *p;
+                
+                p = strtok(NULL, " ");
+                currentEdge.end = atoi(p);
+                
+                transitionStates.push_back(currentEdge);
+            }
         }
     }
     
