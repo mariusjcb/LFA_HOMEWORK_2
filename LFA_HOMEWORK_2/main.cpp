@@ -79,7 +79,8 @@ int readStartState(ifstream *file = NULL) {
         return atoi(readBufferFromConsoleInput());
     } else {
         int x = -1;
-        *file >> x;
+        if(!(*file).eof())
+            *file >> x;
         
         return x;
     }
@@ -97,10 +98,13 @@ vector<int> readFinalStates(ifstream *file = NULL) {
         GotoLine(*file, 2);
         getline(*file, line);
         
-        char *cstr = new char[line.length() + 1];
-        strcpy(cstr, line.c_str());
-        
-        p = strtok(cstr, " ");
+        if(line.length())
+        {
+            char *cstr = new char[line.length() + 1];
+            strcpy(cstr, line.c_str());
+            
+            p = strtok(cstr, " ");
+        }
     }
     
     while (p != NULL)
