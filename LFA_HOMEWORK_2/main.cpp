@@ -24,6 +24,14 @@ struct Edge {
     int end;
 };
 
+ifstream& GotoLine(ifstream& file, unsigned int num){
+    file.seekg(ios::beg);
+    for(int i=0; i < num - 1; ++i)
+        file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+
+    return file;
+}
+
 char* readBufferFromConsoleInput() {
     static char buff[125];
     
@@ -52,6 +60,7 @@ vector<int> readFinalStates(ifstream *file = NULL) {
         p = readBufferFromConsoleInput();
     } else {
         string line;
+        GotoLine(*file, 2);
         getline(*file, line);
         
         char *cstr = new char[line.length() + 1];
@@ -76,8 +85,8 @@ int main(int argc, const char * argv[]) {
     
     ifstream f("inputs.txt");
     
-    int start_state = readStartState(stdin == NULL ? &f : NULL);
-    vector<int> final_states = readFinalStates(stdin == NULL ? &f : NULL);
+    int start_state = readStartState(argc == 0 ? &f : NULL);
+    vector<int> final_states = readFinalStates(argc == 0 ? &f : NULL);
     
     cout << start_state << "\n";
     for(int i = 0; i < final_states.size(); i++) {
