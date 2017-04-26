@@ -18,7 +18,7 @@
 
 using namespace std;
 
-const int FileLineSize = 125;
+const int FileLineSize = 125; // OR: numeric_limits<streamsize>::max()
 
 struct Edge {
     int start;
@@ -82,18 +82,70 @@ vector<int> readFinalStates(ifstream *file = NULL) {
     return finalStates;
 }
 
+vector<Edge> readTransitionStates(ifstream *file = NULL) {
+    vector<Edge> transitionStates;
+    
+    if(file == NULL) {
+        int start;
+        char key;
+        int end;
+        
+        while(fscanf(stdin, "%d %c %d", &start, &key, &end) != EOF) {
+            Edge currentEdge = *new Edge;
+            
+            currentEdge.start = start;
+            currentEdge.key = key;
+            currentEdge.end = end;
+            
+            transitionStates.push_back(currentEdge);
+        }
+    } else {
+        GotoLine(*file, 3);
+    
+        while(!(*file).eof())
+        {
+            char *p = NULL;
+            
+            string line;
+            getline(*file, line);
+            
+            char *cstr = new char[line.length() + 1];
+            strcpy(cstr, line.c_str());
+            
+            Edge currentEdge = *new Edge;
+            
+            p = strtok(cstr, " ");
+            currentEdge.start = atoi(p);
+            
+            p = strtok(NULL, " ");
+            currentEdge.key = *p;
+            
+            p = strtok(NULL, " ");
+            currentEdge.end = atoi(p);
+            
+            transitionStates.push_back(currentEdge);
+        }
+    }
+    
+    return transitionStates;
+}
+
 int main(int argc, const char * argv[]) {
+    ifstream f("inputs.txt");
     vector<Edge> edges;
     
-    ifstream f("inputs.txt");
-    
-    int start_state = readStartState(argc == 0 ? &f : NULL);
-    vector<int> final_states = readFinalStates(argc == 0 ? &f : NULL);
-    vector<int> transition_states = readFinalStates(argc == 0 ? &f : NULL);
+    int start_state = readStartState(f.is_open() ? &f : NULL);
+    vector<int> final_states = readFinalStates(f.is_open() ? &f : NULL);
+    vector<Edge> transition_states = readTransitionStates(f.is_open() ? &f : NULL);
     
     cout << start_state << "\n";
     for(int i = 0; i < final_states.size(); i++) {
         cout << final_states[i] << " ";
+    }
+    
+    cout << "\n";
+    for(int i = 0; i < transition_states.size(); i++) {
+        cout << transition_states[i].start << " " << transition_states[i].key << " " << transition_states[i].end << "\n";
     }
     
     return 0;
