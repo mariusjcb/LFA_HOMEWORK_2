@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include <fstream>
+#include <cstring>
 
 using namespace std;
 
@@ -53,7 +54,10 @@ vector<int> readFinalStates(ifstream *file = NULL) {
         string line;
         getline(*file, line);
         
-        p = strtok(strdup(line.c_str()), " ");
+        char *cstr = new char[line.length() + 1];
+        strcpy(cstr, line.c_str());
+        
+        p = strtok(cstr, " ");
     }
     
     while (p != NULL)
