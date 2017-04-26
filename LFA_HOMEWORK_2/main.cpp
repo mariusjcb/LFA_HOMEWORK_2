@@ -18,6 +18,8 @@
 
 using namespace std;
 
+const int FileLineSize = 125;
+
 struct Edge {
     int start;
     char key;
@@ -27,13 +29,13 @@ struct Edge {
 ifstream& GotoLine(ifstream& file, unsigned int num){
     file.seekg(ios::beg);
     for(int i=0; i < num - 1; ++i)
-        file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+        file.ignore(FileLineSize,'\n');
 
     return file;
 }
 
 char* readBufferFromConsoleInput() {
-    static char buff[125];
+    static char buff[FileLineSize];
     
     fgets(buff, sizeof(buff), stdin);
     return strtok(buff, " ");
@@ -87,6 +89,7 @@ int main(int argc, const char * argv[]) {
     
     int start_state = readStartState(argc == 0 ? &f : NULL);
     vector<int> final_states = readFinalStates(argc == 0 ? &f : NULL);
+    vector<int> transition_states = readFinalStates(argc == 0 ? &f : NULL);
     
     cout << start_state << "\n";
     for(int i = 0; i < final_states.size(); i++) {
