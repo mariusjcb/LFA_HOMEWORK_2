@@ -184,6 +184,16 @@ vector<Edge> readTransitionStates(int& max_node, ifstream *file = NULL) {
 }
 
 //MARK: - DATA USAGE
+void print(vector<int> read) {
+    for(vector<int>::iterator it = read.begin(); it != read.end(); it++)
+        cout << *it << " ";
+}
+
+void print(vector<Edge> read) {
+    for(vector<Edge>::iterator it = read.begin(); it != read.end(); it++)
+        cout << it->start << " " << it->key << it->end << "\n";
+}
+
 vector<int> find(int value, vector<int> into) {
     vector<int> index;
     
@@ -223,15 +233,28 @@ class DFA
     map< int, map<char, int> > partition_table;
     int max_node;
     int* reachable_nodes;
-    int max_partnr;
+    int max_partnr = 0;
+    
+    //MARK: Singleton
+    DFA() {};
+    DFA(DFA const&)             =  delete;
+    void operator=(DFA const&)  =  delete;
     
 public:
+    static DFA& Entity()
+    {
+        static DFA instance;
+        return instance;
+    }
+    
+    //MARK: Implementation
     void setStartState(int value) { start_state = value; }
     void setFinalStates(vector<int> value) { final_states = value; }
     void setTransitionStates(vector<Edge> value) { transition_states = value; }
     void setMaxNode(int value) { max_node = value; }
     
-    DFA(ifstream *f = NULL) {
+    //MARK: Initialization
+    void init(ifstream *f = NULL) {
         setStartState(readStartState(f));
         setFinalStates(readFinalStates(f));
         
@@ -250,129 +273,190 @@ public:
             reachable_nodes[transition_states[i].end] = 1;
     }
     
+    //MARK: Partition Usage
     void buildPartitionTable() {
         for(int i = 0; i <= max_node; i++) {
-            if(reachable_nodes[i] == 1 || reachable_nodes[i] == start_state)
-            {
-                // find current node in edges list
-                vector<int> edges = find(i, transition_states, &Edge::start);
-                partition_table[i] = map<char, int>();
-                
-                // set initial partition
-                int partition = 1;
-                if(find(i, final_states).size())
-                    partition = 2;
-                
-                partition_table[i][EOF] = partition;
-                
-                // set partition for each end node
-                // using edges list
-                for(int j = 0; j < edges.size(); j++)
-                {
-                    partition = 1;
-                    if(find(transition_states[edges[j]].end, final_states).size())
-                        partition = 2;
-                    
-                    partition_table[i][transition_states[edges[j]].key] = partition;
-                }
-            }
+            if(reachable_nodes[i] != 1 && reachable_nodes[i] != start_state)
+                continue;
+            
+            //MARK: find current node in edges list
+            vector<int> edges = find(i, transition_states, &Edge::start);
+            partition_table[i] = map<char, int>();
+            
+            //MARK: set initial partition
+            int partition = 1;
+            if(find(i, final_states).size())
+                partition = 2;
+            
+            partition_table[i][EOF] = partition;
         }
         
+        updatePartitionTable();
         max_partnr = 2;
     }
     
-    void printPartitionTable() {
-        cout << "\n";
+    void updatePartitionTable() {
+        if(!partition_table.size()) return;
+        
         for(int i = 0; i <= max_node; i++) {
-            if(reachable_nodes[i] == 1 || reachable_nodes[i] == start_state)
-            {
-                cout << i << " ";
-                for(map<char,int>::iterator it = partition_table[i].begin(); it != partition_table[i].end(); ++it)
-                    cout << partition_table[i][it->first] << " ";
-                
-                cout << "\n";
-            }
+            if(reachable_nodes[i] != 1 && reachable_nodes[i] != start_state)
+                continue;
+            
+            //MARK: find current node in edges list
+            vector<int> edges = find(i, transition_states, &Edge::start);
+            
+            for(int j = 0; j < edges.size(); j++)
+                partition_table[i][transition_states[edges[j]].key] = partition_table[transition_states[edges[j]].end][EOF];
         }
     }
     
+    string getPartitionStates(int state, bool pushPartitionIntoIgnoreVector=false, vector<int>& ignored = *new vector<int>()) {
+        string newNode = string();
+        
+        int partition = partition_table[state][EOF];
+        if(pushPartitionIntoIgnoreVector)
+            ignored.push_back(partition);
+        
+        for (auto& searchLine : partition_table)
+            if (searchLine.second[EOF] == partition)
+                newNode.append(to_string(searchLine.first));
+        
+        return newNode;
+    }
+    
+    //MARK: Print functions
+    void printPartitionTable() {
+        if(!partition_table.size()) return;
+        
+        cout << "\n";
+        for(int i = 0; i <= max_node; i++) {
+            if(reachable_nodes[i] != 1 && reachable_nodes[i] != start_state)
+                continue;
+            
+            cout << i << " ";
+            for(map<char,int>::iterator it = partition_table[i].begin(); it != partition_table[i].end(); ++it)
+                cout << partition_table[i][it->first] << " ";
+            
+            cout << "\n";
+        }
+    }
+    
+    void printStartState(bool usingPartitionTable=false) {
+        if(!partition_table.size() || !usingPartitionTable)
+        {
+            cout << start_state;
+            return;
+        }
+        
+        int partition = partition_table[start_state][EOF];
+        for (auto& searchLine : partition_table)
+            if (searchLine.second[EOF] == partition)
+                cout << searchLine.first;
+        
+        cout << "\n";
+    }
+    
+    void printFinalStates(bool usingPartitionTable=false) {
+        if(!partition_table.size() || !usingPartitionTable)
+        {
+            ::print(final_states);
+            return;
+        }
+        
+        vector<int> ignored_partitions;
+        for (auto& final_state : final_states)
+        {
+            if(find(partition_table[final_state][EOF], ignored_partitions).size())
+                continue;
+            
+            cout << getPartitionStates(final_state, true, ignored_partitions) << " ";
+        }
+        
+        cout << "\n";
+    }
+    
+    void printEdges(bool usingPartitionTable=false) {
+        if(!partition_table.size() || !usingPartitionTable)
+        {
+            ::print(transition_states);
+            return;
+        }
+        
+        map<string, map<char, bool> > used_state;
+        for (auto& transition_state : transition_states)
+        {
+            string partition = getPartitionStates(transition_state.start);
+            if(transition_state.key == EOF || used_state[partition][transition_state.key] == true)
+                continue;
+            
+            used_state[partition][transition_state.key] = true;
+            cout << partition << " "<< transition_state.key << " " << getPartitionStates(transition_state.end) << "\n";
+        }
+        
+        cout << "\n";
+    }
+    
+    void print() {
+        bool usingPartitionTable = max_partnr ? true : false;
+        cout << "\n";
+        
+        printStartState(usingPartitionTable);
+        printFinalStates(usingPartitionTable);
+        printEdges(usingPartitionTable);
+    }
+    
+    //MARK: DFA Minimization Algorithm
     void minimize() {
-        map< int, map<char, int> > _partition_table = partition_table;
-        for(int i = 1; i <= max_partnr; i++) {
-            // order partition by keys
-            int max_end = 1;
-            map< char, map < int, vector<int> > > end_partitions;
-            for(int k = 0; k<=max_node; k++)
-            {
-                for(map<char,int>::iterator it = _partition_table[k].begin(); it != _partition_table[k].end(); ++it)
+        if(!partition_table.size()) return;
+        
+        vector<int> ignored_partitions;
+        int lastCode = max_partnr;
+        int newPartitionCode = max_partnr;
+        
+        for (auto& searchLine : partition_table) {
+            if(find(searchLine.second[EOF], ignored_partitions).size() != 0)
+                continue;
+            
+            for (map<int, map<char, int> >::iterator cline = partition_table.begin(); cline != partition_table.end(); cline++) {
+                if(cline->first == searchLine.first) continue;
+                if(cline->second[EOF] != searchLine.second[EOF]) continue;
+                
+                int ok = 1;
+                for(auto& searchChar : searchLine.second) {
+                    if(cline->second.find(searchChar.first) == cline->second.end()) { ok = 0; break; }
+                    if(cline->second[searchChar.first] != searchChar.second) { ok = 0; break; }
+                }
+                
+                if(ok == 0)
                 {
-                    int startOfLoop = 1;
-                    int endOfLoop = max_partnr;
-                    if(it->first != EOF)
-                        startOfLoop = endOfLoop = i;
-                    
-                    for(int j = startOfLoop; j <= endOfLoop; j++)
-                    {
-                        if(max_end < j)
-                            max_end = j;
-                        
-                        end_partitions[it->first][j] = find(j, _partition_table, it->first);
-                        
-                        cout << "\nend " << it->first << ": ";
-                        
-                        for(int ijk = 0; ijk < end_partitions[it->first][j].size(); ijk++)
-                            cout << end_partitions[it->first][j][ijk] << " ";
-                    }
+                    if(newPartitionCode == lastCode) newPartitionCode++;
+                    cline->second[EOF] = newPartitionCode;
                 }
             }
             
-            // find matches
-            for(int j = 1; j <= max_end; j++)
-            {
-                set<int> matches(end_partitions[EOF][j].begin(), end_partitions[EOF][j].end());
-                
-                for(map< char, map < int, vector<int> > >::iterator it = end_partitions.begin(); it != end_partitions.end(); ++it)
-                {
-                    if(end_partitions[it->first].size() && it->first != EOF)
-                    {
-                        set<int> s1(end_partitions[it->first][j].begin(), end_partitions[it->first][j].end());
-                        set<int> s2 = matches;
-                        set<int> s3;
-                        
-                        set_intersection(s1.begin(), s1.end(), s2.begin(), matches.end(), inserter(s3, s3.begin()));
-                        matches = s3;
-                        
-                        cout << "part[" << it->first << "][" << j << "]: ";
-                        for (set<int>::iterator match_node = s1.begin(); match_node != s1.end(); match_node++)
-                            cout << *match_node;
-                    }
-                }
-                
-                if(matches.size())
-                {
-                    max_partnr++;
-                    for (set<int>::iterator match_node = matches.begin(); match_node != matches.end(); match_node++)
-                        _partition_table[*match_node][EOF] = max_partnr;
-                }
+            if(newPartitionCode != lastCode) {
+                ignored_partitions.push_back(newPartitionCode);
+                lastCode = newPartitionCode;
             }
         }
         
-        if(_partition_table != partition_table)
-        {
-            partition_table = _partition_table;
+        if(lastCode != max_partnr) {
+            max_partnr = lastCode;
+            updatePartitionTable();
             
-            printPartitionTable();
             minimize();
-        }
+        } else updatePartitionTable();
     }
 };
 
 int main(int argc, const char * argv[]) {
     ifstream *f = open_input_file("inputsz.txt");
     
-    DFA dfa = *new DFA(f);
-    dfa.printPartitionTable();
-    dfa.minimize();
-    dfa.printPartitionTable();
+    DFA::Entity().init(f);
+    DFA::Entity().minimize();
+    
+    cout << "Output: ";
+    DFA::Entity().print();
     
     return 0;
 }
