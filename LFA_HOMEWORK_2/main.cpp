@@ -38,13 +38,15 @@ fstream* open_file(const char* file_name) {
     
     if(f.is_open())
         return &f;
-    else cout << "File not found.\n";
+    else cout << "File from parameters not found.\n";
     
-    if (isatty(fileno(stdin)))
-    {
-        cout << "Change file name or...\n\nInsert file using '<your_file' in tty mode" << endl;
-        exit(0);
-    } else cout << "I am in tty mode...\n";
+    #ifdef fileno
+        if (isatty(fileno(stdin)))
+        {
+            cout << "Change file name or...\n\nInsert file using '<your_file' in tty mode" << endl;
+            exit(0);
+        } else cout << "I am in tty mode...\n";
+    #endif
     
     return NULL;
 }
@@ -119,7 +121,7 @@ vector<int> readFinalStates(ifstream *file = NULL) {
     return finalStates;
 }
 
-vector<Edge> readTransitionStates(int& max_node, ifstream *file = NULL) {
+vector<Edge> readTransitionStates(int& max_node, int& min_node, ifstream *file = NULL) {
     vector<Edge> transitionStates;
     
     if(file == NULL) {
@@ -139,6 +141,12 @@ vector<Edge> readTransitionStates(int& max_node, ifstream *file = NULL) {
             
             if(max_node < currentEdge.end)
                 max_node = currentEdge.end;
+            
+            if(currentEdge.start < min_node)
+                min_node = currentEdge.start;
+            
+            if(currentEdge.end < min_node)
+                min_node = currentEdge.end;
             
             transitionStates.push_back(currentEdge);
         }
@@ -181,6 +189,17 @@ vector<Edge> readTransitionStates(int& max_node, ifstream *file = NULL) {
     
     return transitionStates;
 }
+
+//MARK: Int to String for Windows
+#if defined (WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#include <sstream>
+string to_string(int a)
+{
+    stringstream ss;
+    ss << a;
+    return ss.str();
+}
+#endif
 
 //MARK: - DATA USAGE
 void print(vector<int> read) {
@@ -231,6 +250,7 @@ class DFA
     vector<Edge> transition_states;
     map< int, map<char, int> > partition_table;
     int max_node;
+    int min_node;
     int* reachable_nodes;
     int max_partnr = 0;
     
@@ -251,6 +271,7 @@ public:
     void setFinalStates(vector<int> value) { final_states = value; }
     void setTransitionStates(vector<Edge> value) { transition_states = value; }
     void setMaxNode(int value) { max_node = value; }
+    void setMinNode(int value) { min_node = value; }
     
     //MARK: - Initialization
     void init(ifstream *f = NULL) {
@@ -258,8 +279,10 @@ public:
         setFinalStates(readFinalStates(f));
         
         int max_node = 0;
-        setTransitionStates(readTransitionStates(max_node, f));
+        int min_node = 0;
+        setTransitionStates(readTransitionStates(max_node, min_node, f));
         setMaxNode(max_node);
+        setMinNode(min_node);
         
         removeUnreachableNodes();
         buildPartitionTable();
@@ -274,7 +297,7 @@ public:
     
     //MARK: - Partition Usage
     void buildPartitionTable() {
-        for(int i = 0; i <= max_node; i++) {
+        for(int i = min_node; i <= max_node; i++) {
             if(reachable_nodes[i] != 1 && reachable_nodes[i] != start_state)
                 continue;
             
@@ -297,7 +320,7 @@ public:
     void updatePartitionTable() {
         if(!partition_table.size()) return;
         
-        for(int i = 0; i <= max_node; i++) {
+        for(int i = min_node; i <= max_node; i++) {
             if(reachable_nodes[i] != 1 && reachable_nodes[i] != start_state)
                 continue;
             
@@ -328,7 +351,7 @@ public:
         if(!partition_table.size()) return;
         
         cout << "\n";
-        for(int i = 0; i <= max_node; i++) {
+        for(int i = min_node; i <= max_node; i++) {
             if(reachable_nodes[i] != 1 && reachable_nodes[i] != start_state)
                 continue;
             
@@ -454,7 +477,7 @@ int main(int argc, const char * argv[]) {
     DFA::Entity().init(f);
     DFA::Entity().minimize();
     
-    cout << "Output: ";
+    cout << "\nOutput: ";
     DFA::Entity().print();
     
     return 0;
