@@ -38,7 +38,12 @@ fstream* open_file(const char* file_name) {
     
     if(f.is_open())
         return &f;
-    else cout << "File from parameters not found.\n";
+    else {
+        cout << "File from parameters not found.\n";
+        #ifndef fileno
+            exit(0);
+        #endif
+    }
     
     #ifdef fileno
         if (isatty(fileno(stdin)))
