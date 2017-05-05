@@ -190,7 +190,7 @@ vector<Edge> readTransitionStates(int& max_node, int& min_node, ifstream *file =
     return transitionStates;
 }
 
-//MARK: Int to String for Windows
+//MARK: WINDOWS Int to String
 #if defined (WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
 #include <sstream>
 string to_string(int a)
