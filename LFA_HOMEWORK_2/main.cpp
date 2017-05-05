@@ -39,7 +39,7 @@ fstream* open_file(const char* file_name) {
     if(f.is_open())
         return &f;
     else {
-        cout << "File from parameters not found.\n";
+        cout << "File send as parameter to open_file:\nError 404: Not Found.\n";
         #ifndef fileno
             exit(0);
         #endif
