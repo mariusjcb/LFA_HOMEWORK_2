@@ -16,7 +16,6 @@
 
 #include <iostream>
 #include <algorithm>
-#include <set>
 #include <vector>
 #include <map>
 #include <fstream>
@@ -235,7 +234,7 @@ class DFA
     int* reachable_nodes;
     int max_partnr = 0;
     
-    //MARK: Singleton
+    //MARK: - Singleton
     DFA() {};
     DFA(DFA const&)             =  delete;
     void operator=(DFA const&)  =  delete;
@@ -247,13 +246,13 @@ public:
         return instance;
     }
     
-    //MARK: Implementation
+    //MARK: - Implementation
     void setStartState(int value) { start_state = value; }
     void setFinalStates(vector<int> value) { final_states = value; }
     void setTransitionStates(vector<Edge> value) { transition_states = value; }
     void setMaxNode(int value) { max_node = value; }
     
-    //MARK: Initialization
+    //MARK: - Initialization
     void init(ifstream *f = NULL) {
         setStartState(readStartState(f));
         setFinalStates(readFinalStates(f));
@@ -273,7 +272,7 @@ public:
             reachable_nodes[transition_states[i].end] = 1;
     }
     
-    //MARK: Partition Usage
+    //MARK: - Partition Usage
     void buildPartitionTable() {
         for(int i = 0; i <= max_node; i++) {
             if(reachable_nodes[i] != 1 && reachable_nodes[i] != start_state)
@@ -324,7 +323,7 @@ public:
         return newNode;
     }
     
-    //MARK: Print functions
+    //MARK: - Print functions
     void printPartitionTable() {
         if(!partition_table.size()) return;
         
@@ -405,7 +404,7 @@ public:
         printEdges(usingPartitionTable);
     }
     
-    //MARK: DFA Minimization Algorithm
+    //MARK: - DFA Minimization Algorithm
     void minimize() {
         if(!partition_table.size()) return;
         
