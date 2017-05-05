@@ -45,7 +45,7 @@ fstream* open_file(const char* file_name) {
         #endif
     }
     
-    #if !defined (WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+    #if !defined (WIN32) && !defined(_WIN32) && !defined(__WIN32) && !defined(__CYGWIN__)
         if (isatty(fileno(stdin)))
         {
             cout << "Change file name or...\n\nInsert file using '<your_file' in tty mode" << endl;
